@@ -6,29 +6,26 @@ import org.example.service.evaluator.ClassicBoardEvaluator;
 
 import java.util.Map;
 
-/*
-DO NOT RUN ON A BIG BOARD!!! YOUR MACHINE WILL EXPLODE =)
- */
-public class BasicMinMax implements MoveFinder {
+public class MinMaxAlphaBeta implements MoveFinder {
 
     private final BoardEvaluator boardEvaluator = new ClassicBoardEvaluator();
     private static final Map<Symbol, Player> PLAYER_FOR_SYMBOL = Map.of(
             Symbol.X, Player.MAXIMIZER,
             Symbol.O, Player.MINIMIZER
     );
+    private static final int MAX_DEPTH = 4, alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
 
     @Override
     public Move find(Board board) {
-        if (board.isFilled())
+        if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
             throw new IllegalStateException("The board is already filled. No more moves allowed.");
 
-        BoardCell bestCell = null;
-        int bestScore = 0;
-
         Player player = getPlayer(board);
+        BoardCell bestCell = null;
+        int bestScore = player.getInitialScore();
 
         for (BoardCell cell : board.getEmptyCells()) {
-            int moveScore = evaluateMove(board, cell);
+            int moveScore = evaluateMove(board, cell, 1, alpha, beta);
             if (player.chooseBetterScore(bestScore, moveScore) == moveScore) {
                 bestScore = moveScore;
                 bestCell = cell;
@@ -38,20 +35,31 @@ public class BasicMinMax implements MoveFinder {
         return new Move(bestCell, bestScore);
     }
 
-    private int minimax(Board board) {
+    private int minimax(Board board, int depth, int alpha, int beta) {
         int score = boardEvaluator.evaluate(board);
-        int depth = board.getFilledCellsCount();
+        int filledCellsCount = board.getFilledCellsCount();
 
-        if (hasMaximizerWon(board)) return score - depth;
-        if (hasMinimizerWon(board)) return score + depth;
-        if (board.isFilled()) return 0;
+        if (hasMaximizerWon(board)) return score - filledCellsCount;
+        if (hasMinimizerWon(board)) return score + filledCellsCount;
+        if (board.isFilled() || depth >= MAX_DEPTH) return score;
 
         Player player = getPlayer(board);
-
         int bestScore = player.getInitialScore();
+
         for (BoardCell cell : board.getEmptyCells()) {
-            int moveScore = evaluateMove(board, cell);
+            int moveScore = evaluateMove(board, cell, depth+1, alpha, beta);
             bestScore = player.chooseBetterScore(bestScore, moveScore);
+
+            // new logic
+            if (player == Player.MAXIMIZER) {
+                alpha = Math.max(alpha, bestScore);
+            }
+            if (player == Player.MINIMIZER) {
+                beta = Math.min(beta, bestScore);
+            }
+            if (beta <= alpha) {
+                break; // Beta cut-off
+            }
         }
 
         return bestScore;
@@ -62,7 +70,7 @@ public class BasicMinMax implements MoveFinder {
     }
 
     private boolean hasMinimizerWon(Board board) {
-        return boardEvaluator.hasSymbolWon(board, Symbol.X);
+        return boardEvaluator.hasSymbolWon(board, Symbol.O);
     }
 
     private Player getPlayer(Board board) {
@@ -70,10 +78,10 @@ public class BasicMinMax implements MoveFinder {
         return PLAYER_FOR_SYMBOL.get(symbolToPlay);
     }
 
-    private int evaluateMove(Board board, BoardCell cell) {
+    private int evaluateMove(Board board, BoardCell cell, int depth, int alfa, int beta) {
         Symbol symbolToPlay = board.getNextSymbolToPlay();
         board.fillCell(cell, symbolToPlay);
-        int score = minimax(board);
+        int score = minimax(board, depth, alfa, beta);
         board.eraseCell(cell);
 
         return score;

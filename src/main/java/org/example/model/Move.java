@@ -1,6 +1,5 @@
 package org.example.model;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -8,9 +7,8 @@ import lombok.ToString;
 @Getter
 @RequiredArgsConstructor
 @ToString
-@EqualsAndHashCode
-public class BoardCell {
+public class Move {
 
-    private final int row;
-    private final int col;
+    private final BoardCell cell;
+    private final int score;
 }

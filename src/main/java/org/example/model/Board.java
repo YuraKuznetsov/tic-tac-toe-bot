@@ -3,14 +3,12 @@ package org.example.model;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
-import java.util.Iterator;
-import java.util.stream.StreamSupport;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
-@ToString
 public class Board {
 
     private BoardFormat format;
@@ -50,135 +48,118 @@ public class Board {
         return getFilledCellsCount() % 2 == 0 ? Symbol.X : Symbol.O;
     }
 
-    public Iterable<Symbol[]> getRows() {
-        return () -> new Iterator<>() {
-            private int rowIndex = 0;
+    public Symbol[][] getRows() {
+        Symbol[][] rows = new Symbol[format.getDimension()][format.getDimension()];
 
-            @Override
-            public boolean hasNext() {
-                return rowIndex < format.getDimension();
-            }
+        for (int i = 0; i < format.getDimension(); i++) {
+            rows[i] = matrix[i].clone();
+        }
 
-            @Override
-            public Symbol[] next() {
-                return matrix[rowIndex++].clone();
-            }
-        };
+        return rows;
     }
 
-    public Iterable<Symbol[]> getCols() {
-        return () -> new Iterator<>() {
-            private int colIndex = 0;
+    public Symbol[][] getCols() {
+        Symbol[][] cols = new Symbol[format.getDimension()][format.getDimension()];
 
-            @Override
-            public boolean hasNext() {
-                return colIndex < format.getDimension();
+        for (int i = 0; i < format.getDimension(); i++) {
+            for (int j = 0; j < format.getDimension(); j++) {
+                cols[i][j] = matrix[j][i];
             }
+        }
 
-            @Override
-            public Symbol[] next() {
-                Symbol[] column = new Symbol[format.getDimension()];
-                for (int i = 0; i < format.getDimension(); i++) {
-                    column[i] = matrix[i][colIndex];
-                }
-                colIndex++;
-                return column;
-            }
-        };
+        return cols;
     }
 
-    public Iterable<Symbol[]> getMainDiagonals() {
-        return () -> new Iterator<>() {
-            private int currentIndex = 0;
+    public Symbol[][] getMainDiagonals() {
+        int diagonalsCount = 2 * format.getDimension() - 1;
+        Symbol[][] diagonals = new Symbol[diagonalsCount][];
 
-            @Override
-            public boolean hasNext() {
-                return currentIndex < (2 * format.getDimension() - 1);
+        for (int i = 0; i < diagonalsCount; i++) {
+            int startRow, startCol;
+            if (i < format.getDimension()) {
+                startRow = format.getDimension() - i - 1;
+                startCol = 0;
+            } else {
+                startRow = 0;
+                startCol = i - format.getDimension() + 1;
             }
 
-            @Override
-            public Symbol[] next() {
-                int startRow, startCol;
-
-                if (currentIndex < format.getDimension()) {
-                    startRow = format.getDimension() - currentIndex - 1;
-                    startCol = 0;
-                } else {
-                    startRow = 0;
-                    startCol = currentIndex - format.getDimension() + 1;
-                }
-
-                int length = Math.min(currentIndex + 1, 2 * format.getDimension() - 1 - currentIndex);
-                Symbol[] diagonal = new Symbol[length];
-
-                for (int i = 0; i < length; i++) {
-                    diagonal[i] = matrix[startRow + i][startCol + i];
-                }
-
-                currentIndex++;
-                return diagonal;
+            int length = Math.min(i + 1, diagonalsCount - i);
+            diagonals[i] = new Symbol[length];
+            for (int j = 0; j < length; j++) {
+                diagonals[i][j] = matrix[startRow + j][startCol + j];
             }
-        };
+        }
+
+        return diagonals;
     }
 
-    public Iterable<Symbol[]> getSecondaryDiagonals() {
-        return () -> new Iterator<>() {
-            private int currentIndex = 0;
+    public Symbol[][] getSecondaryDiagonals() {
+        int diagonalsCount = 2 * format.getDimension() - 1;
+        Symbol[][] diagonals = new Symbol[diagonalsCount][];
 
-            @Override
-            public boolean hasNext() {
-                return currentIndex < (2 * format.getDimension() - 1);
+        for (int i = 0; i < diagonalsCount; i++) {
+            int startRow, startCol;
+            if (i < format.getDimension()) {
+                startRow = i;
+                startCol = 0;
+            } else {
+                startRow = format.getDimension() - 1;
+                startCol = i - format.getDimension() + 1;
             }
 
-            @Override
-            public Symbol[] next() {
-                int startRow, startCol;
-
-                if (currentIndex < format.getDimension()) {
-                    startRow = currentIndex;
-                    startCol = 0;
-                } else {
-                    startRow = format.getDimension() - 1;
-                    startCol = currentIndex - format.getDimension() + 1;
-                }
-
-                int length = Math.min(currentIndex + 1, 2 * format.getDimension() - 1 - currentIndex);
-                Symbol[] diagonal = new Symbol[length];
-
-                for (int i = 0; i < length; i++) {
-                    diagonal[i] = matrix[startRow - i][startCol + i];
-                }
-
-                currentIndex++;
-                return diagonal;
+            int length = Math.min(i + 1, diagonalsCount - i);
+            diagonals[i] = new Symbol[length];
+            for (int j = 0; j < length; j++) {
+                diagonals[i][j] = matrix[startRow - j][startCol + j];
             }
-        };
+        }
+
+        return diagonals;
     }
 
-    public Iterable<BoardCell> getAllCells() {
-        return () -> new Iterator<>() {
-            private int row = 0;
-            private int col = 0;
+    public List<BoardCell> getEmptyCells() {
+        List<BoardCell> emptyCells = new ArrayList<>();
 
-            @Override
-            public boolean hasNext() {
-                return row < format.getDimension() && col < format.getDimension();
-            }
-
-            @Override
-            public BoardCell next() {
-                BoardCell cell = new BoardCell(row, col);
-                if (++col >= format.getDimension()) {
-                    col = 0;
-                    row++;
+        for (int i = 0; i < format.getDimension(); i++) {
+            for (int j = 0; j < format.getDimension(); j++) {
+                if (matrix[i][j] == Symbol.EMPTY) {
+                    emptyCells.add(new BoardCell(i, j));
                 }
-                return cell;
             }
-        };
+        }
+
+        return emptyCells;
     }
 
-    public Iterable<BoardCell> getEmptyCells() {
-        return StreamSupport.stream(getAllCells().spliterator(), false)
-                .filter(cell -> matrix[cell.getRow()][cell.getCol()] == Symbol.EMPTY)::iterator;
+    @Override
+    public String toString() {
+        int cellWidth = 5; // Adjust the cell width as needed
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < format.getDimension(); i++) {
+            for (int j = 0; j < format.getDimension(); j++) {
+                String cellValue = matrix[i][j].toString();
+
+                // Append the cell value with padding to ensure fixed width
+                sb.append(String.format("%-" + cellWidth + "s", cellValue));
+
+                if (j < format.getDimension() - 1) {
+                    sb.append(" | ");
+                }
+            }
+
+            sb.append("\n");
+
+            // Add horizontal separator between rows
+            if (i < format.getDimension() - 1) {
+                for (int k = 0; k < format.getDimension() * (cellWidth + 3) - 3; k++) {
+                    sb.append("-");
+                }
+                sb.append("\n");
+            }
+        }
+
+        return sb.toString();
     }
 }
