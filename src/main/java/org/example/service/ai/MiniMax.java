@@ -1,21 +1,21 @@
 package org.example.service.ai;
 
+import lombok.RequiredArgsConstructor;
 import org.example.model.*;
 import org.example.service.evaluator.BoardEvaluator;
-import org.example.service.evaluator.ClassicBoardEvaluator;
 
 import java.util.Map;
 
-public class MinMaxAlphaBeta implements MoveFinder {
+@RequiredArgsConstructor
+public class MiniMax {
 
-    private final BoardEvaluator boardEvaluator = new ClassicBoardEvaluator();
+    private final BoardEvaluator boardEvaluator;
     private static final Map<Symbol, Player> PLAYER_FOR_SYMBOL = Map.of(
             Symbol.X, Player.MAXIMIZER,
             Symbol.O, Player.MINIMIZER
     );
     private static final int MAX_DEPTH = 4, alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
 
-    @Override
     public Move find(Board board) {
         if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
             throw new IllegalStateException("The board is already filled. No more moves allowed.");

@@ -1,15 +1,14 @@
 package org.example.service.ai;
 
 import org.example.model.*;
+import org.example.service.evaluator.ClassicBoardEvaluator;
 import org.junit.jupiter.api.Test;
-
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MinMaxAlphaBetaTest {
+class MiniMaxTest {
 
-    MoveFinder underTest = new MinMaxAlphaBeta();
+    MiniMax underTest = new MiniMax(new ClassicBoardEvaluator());
 
 
     /* Test Board Format 3x3 And Modification Classic */
@@ -115,6 +114,19 @@ class MinMaxAlphaBetaTest {
             System.out.println(board);
         }
     }
+
+    @Test
+    void testGameProcess9x9() {
+        Board board = getBoard(BoardFormat.BOARD_9X9, BoardModification.CLASSIC);
+
+        while (!board.isFilled()) {
+            Move bestMove = getMoveAndPrintTime(board);
+            board.fillCell(bestMove.getCell(), board.getNextSymbolToPlay());
+            System.out.println(bestMove);
+            System.out.println(board);
+        }
+    }
+
 
     private Move getMoveAndPrintTime(Board board) {
         long startTime = System.nanoTime();
