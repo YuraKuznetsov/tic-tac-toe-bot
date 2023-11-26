@@ -10,9 +10,6 @@ const boardSize = parseInt(boardFormat.charAt(boardFormat.length - 1));
 const userSymbol = urlParams.get('symbol');
 const botSymbol = userSymbol === "X" ? "O" : "X";
 
-console.log(userSymbol)
-console.log(botSymbol)
-
 // Initialize the board matrix
 const boardMatrix = Array.from({ length: boardSize }, () =>
     Array.from({ length: boardSize }, () => "EMPTY")
@@ -51,15 +48,13 @@ function onCellClick(row, col) {
     if (boardMatrix[row][col] !== "EMPTY") return;
 
     updateCell(row, col, userSymbol);
-
-
     makeBotMove();
 }
 
 
 // Function to update a specific cell on the board
 function updateCell(row, col, symbol) {
-    boardMatrix[row][col] = userSymbol;
+    boardMatrix[row][col] = symbol;
     const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
     cell.textContent = symbol;
 }
@@ -89,8 +84,6 @@ function makeBotMove() {
         "modification": boardModification,
         "matrix": boardMatrix
     }
-
-    console.log(boardMatrix);
 
     fetch("/game/optimal-move", {
         method: "POST",
