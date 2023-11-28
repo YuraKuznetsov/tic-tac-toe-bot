@@ -14,7 +14,9 @@ public class MiniMax {
             Symbol.X, Player.MAXIMIZER,
             Symbol.O, Player.MINIMIZER
     );
-    private static final int MAX_DEPTH = 4, alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
+    private static final int MAX_DEPTH = 4;
+//    private static final int TIME_LIMIT_MILLISECONDS = 100000;
+    private long startTime;
 
     public Move find(Board board) {
         if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
@@ -24,30 +26,54 @@ public class MiniMax {
         BoardCell bestCell = null;
         int bestScore = player.getInitialScore();
 
-        for (BoardCell cell : board.getEmptyCells()) {
-            int moveScore = evaluateMove(board, cell, 1, alpha, beta);
-            if (player.chooseBetterScore(bestScore, moveScore) == moveScore) {
-                bestScore = moveScore;
-                bestCell = cell;
+        startTime = System.currentTimeMillis();
+
+        for (int depth = 1; depth <= MAX_DEPTH; depth++) {
+            Move currentMove = null;
+            int currentScore = 0;
+
+            for (BoardCell cell : board.getEmptyCells()) {
+
+                Symbol symbolToPlay = board.getNextSymbolToPlay();
+                board.fillCell(cell, symbolToPlay);
+                int moveScore = minimax(board, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, depth);
+                board.eraseCell(cell);
+
+                if (player.chooseBetterScore(currentScore, moveScore) == moveScore) {
+                    currentScore = moveScore;
+                    currentMove = new Move(cell, moveScore);
+                }
+            }
+
+            if (currentMove != null) {
+                bestCell = currentMove.getCell();
+                bestScore = currentMove.getScore();
             }
         }
+
+
 
         return new Move(bestCell, bestScore);
     }
 
-    private int minimax(Board board, int depth, int alpha, int beta) {
+    private int minimax(Board board, int depth, int alpha, int beta, int maxDepth) {
+//        if (depth >= maxDepth || board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board)) {
+//            return boardEvaluator.evaluate(board);
+//        }
+
         int score = boardEvaluator.evaluate(board);
         int filledCellsCount = board.getFilledCellsCount();
 
         if (hasMaximizerWon(board)) return score - filledCellsCount;
         if (hasMinimizerWon(board)) return score + filledCellsCount;
-        if (board.isFilled() || depth >= MAX_DEPTH) return score;
+        if (board.isFilled() || depth >= maxDepth) return score;
+
 
         Player player = getPlayer(board);
         int bestScore = player.getInitialScore();
 
         for (BoardCell cell : board.getEmptyCells()) {
-            int moveScore = evaluateMove(board, cell, depth+1, alpha, beta);
+            int moveScore = evaluateMove(board, cell, depth+1, alpha, beta, maxDepth);
             bestScore = player.chooseBetterScore(bestScore, moveScore);
 
             // new logic
@@ -78,12 +104,16 @@ public class MiniMax {
         return PLAYER_FOR_SYMBOL.get(symbolToPlay);
     }
 
-    private int evaluateMove(Board board, BoardCell cell, int depth, int alfa, int beta) {
+    private int evaluateMove(Board board, BoardCell cell, int depth, int alfa, int beta, int maxDepth) {
         Symbol symbolToPlay = board.getNextSymbolToPlay();
         board.fillCell(cell, symbolToPlay);
-        int score = minimax(board, depth, alfa, beta);
+        int score = minimax(board, depth, alfa, beta, maxDepth);
         board.eraseCell(cell);
 
         return score;
     }
+
+//    private boolean outOfTime() {
+//        return System.currentTimeMillis() - startTime >= TIME_LIMIT_MILLISECONDS;
+//    }
 }
