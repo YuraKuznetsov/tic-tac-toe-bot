@@ -2,8 +2,10 @@ package org.example.service.ai;
 
 import lombok.RequiredArgsConstructor;
 import org.example.model.*;
+import org.example.service.MoveSorter;
 import org.example.service.evaluator.BoardEvaluator;
 
+import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -14,7 +16,7 @@ public class MiniMax {
             Symbol.X, Player.MAXIMIZER,
             Symbol.O, Player.MINIMIZER
     );
-    private static final int MAX_DEPTH = 4;
+    private static final int MAX_DEPTH = 6;
 
     public Move find(Board board) {
         if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
@@ -57,7 +59,10 @@ public class MiniMax {
         Player player = getPlayer(board);
         int bestScore = player.getInitialScore();
 
-        for (BoardCell cell : board.getEmptyCells()) {
+        MoveSorter moveSorter = new MoveSorter(boardEvaluator, player);
+        List<BoardCell> cells = moveSorter.sortCells(board);
+
+        for (BoardCell cell : cells) {
             Symbol symbolToPlay = board.getNextSymbolToPlay();
             board.fillCell(cell, symbolToPlay);
             int moveScore = minimax(board, depth + 1, alpha, beta, maxDepth);
