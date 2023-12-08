@@ -8,10 +8,7 @@ import org.example.service.evaluator.BoardEvaluator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -25,28 +22,44 @@ public class MiniMax {
     private static final int MAX_DEPTH = 6;
     private ExecutorService executorService;
 
-    public Move find(Board board) {
-        executorService = Executors.newFixedThreadPool(4);
+    public Move findBestMove(Board board) {
+        return analyzeBoard(board).get(0);
+    }
+
+    public List<Move> analyzeBoard(Board board) {
         if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
             throw new IllegalStateException("The board is already filled. No more moves allowed.");
 
+        createExecutorService();
+        List<Callable<Move>> tasks = prepareMoveTasks(board);
+        List<Move> moves = calculateMoves(tasks);
+        shutDownExecutorService();
+
         Player player = getPlayer(board);
-        BoardCell bestCell = null;
-        int bestScore = player.getInitialScore();
+        moves.sort((m1, m2) -> player == Player.MINIMIZER ?
+                Integer.compare(m1.getScore(), m2.getScore()) :
+                Integer.compare(m2.getScore(), m1.getScore()));
 
+        return moves;
+    }
+
+    private List<Callable<Move>> prepareMoveTasks(Board board) {
         List<Callable<Move>> tasks = new ArrayList<>();
-
         for (BoardCell cell : board.getEmptyCells()) {
             tasks.add(new MiniMaxTask(board.clone(), cell));
         }
 
-        List<Move> results;
+        return tasks;
+    }
+
+    private List<Move> calculateMoves(List<Callable<Move>> tasks) {
         try {
-            results = executorService.invokeAll(tasks).stream()
+            return executorService.invokeAll(tasks)
+                    .stream()
                     .map(future -> {
                         try {
                             return future.get();
-                        } catch (Exception e) {
+                        } catch (InterruptedException | ExecutionException e) {
                             throw new RuntimeException(e);
                         }
                     })
@@ -54,18 +67,6 @@ public class MiniMax {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-        for (Move move : results) {
-            int moveScore = move.getScore();
-            if (player.chooseBetterScore(bestScore, moveScore) == moveScore) {
-                bestScore = moveScore;
-                bestCell = move.getCell();
-            }
-        }
-
-        shutDown();
-
-        return new Move(bestCell, bestScore);
     }
 
     private int minimax(Board board, int depth, int alpha, int beta) {
@@ -115,7 +116,11 @@ public class MiniMax {
         return PLAYER_FOR_SYMBOL.get(symbolToPlay);
     }
 
-    private void shutDown() {
+    private void createExecutorService() {
+        executorService = Executors.newFixedThreadPool(4);
+    }
+
+    private void shutDownExecutorService() {
         executorService.shutdown();
         try {
             if (!executorService.awaitTermination(800, TimeUnit.MILLISECONDS)) {
