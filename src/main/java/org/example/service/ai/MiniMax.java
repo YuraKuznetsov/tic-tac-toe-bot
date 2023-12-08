@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class MiniMax {
@@ -20,7 +19,6 @@ public class MiniMax {
             Symbol.O, Player.MINIMIZER
     );
     private static final int MAX_DEPTH = 6;
-    private ExecutorService executorService;
 
     public Move findBestMove(Board board) {
         return analyzeBoard(board).get(0);
@@ -30,10 +28,10 @@ public class MiniMax {
         if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
             throw new IllegalStateException("The board is already filled. No more moves allowed.");
 
-        createExecutorService();
+        MiniMaxExecutor miniMaxExecutor = new MiniMaxExecutor();
         List<Callable<Move>> tasks = prepareMoveTasks(board);
-        List<Move> moves = calculateMoves(tasks);
-        shutDownExecutorService();
+        List<Move> moves = miniMaxExecutor.calculateMoves(tasks);
+        miniMaxExecutor.shutDown();
 
         Player player = getPlayer(board);
         moves.sort((m1, m2) -> player == Player.MINIMIZER ?
@@ -50,23 +48,6 @@ public class MiniMax {
         }
 
         return tasks;
-    }
-
-    private List<Move> calculateMoves(List<Callable<Move>> tasks) {
-        try {
-            return executorService.invokeAll(tasks)
-                    .stream()
-                    .map(future -> {
-                        try {
-                            return future.get();
-                        } catch (InterruptedException | ExecutionException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private int minimax(Board board, int depth, int alpha, int beta) {
@@ -114,21 +95,6 @@ public class MiniMax {
     private Player getPlayer(Board board) {
         Symbol symbolToPlay = board.getNextSymbolToPlay();
         return PLAYER_FOR_SYMBOL.get(symbolToPlay);
-    }
-
-    private void createExecutorService() {
-        executorService = Executors.newFixedThreadPool(4);
-    }
-
-    private void shutDownExecutorService() {
-        executorService.shutdown();
-        try {
-            if (!executorService.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-                executorService.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-        }
     }
 
     private class MiniMaxTask implements Callable<Move> {
