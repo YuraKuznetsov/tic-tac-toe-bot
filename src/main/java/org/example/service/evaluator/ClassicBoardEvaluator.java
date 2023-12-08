@@ -19,8 +19,8 @@ public class ClassicBoardEvaluator extends BoardEvaluator {
 
         return scoreX - scoreO;
 
-//        if (hasSymbolWon(board, Symbol.X)) return calculateScore(board, Symbol.X);
-//        if (hasSymbolWon(board, Symbol.O)) return -calculateScore(board, Symbol.O);
+//        if (hasSymbolWon(board, Symbol.X)) return getScoreForLineLength(board.getFormat().getWinLineLength());
+//        if (hasSymbolWon(board, Symbol.O)) return -getScoreForLineLength(board.getFormat().getWinLineLength());
 //        if (board.isFilled()) return 0;
 //
 //        return calculateScore(board, Symbol.X) - calculateScore(board, Symbol.O);
@@ -28,10 +28,104 @@ public class ClassicBoardEvaluator extends BoardEvaluator {
 
     @Override
     public boolean hasSymbolWon(Board board, Symbol symbol) {
-        for (Symbol[] line : getAllLines(board)) {
-            if (containsWinLine(line, symbol, board.getFormat().getWinLineLength()))
-                return true;
+        Symbol[][] matrix = board.getMatrix();
+        int winLineLength = board.getFormat().getWinLineLength();
+
+        return checkRows(matrix, symbol, winLineLength) ||
+                checkCols(matrix, symbol, winLineLength) ||
+                checkMainDiagonals(matrix, symbol, winLineLength) ||
+                checkSecondaryDiagonals(matrix, symbol, winLineLength);
+    }
+
+    private boolean checkRows(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+        for (int i = 0; i < matrix.length; i++) {
+            int count = 0;
+
+            for (int j = 0; j < matrix.length; j++) {
+                if (matrix[i][j] != symbol) {
+                    count = 0;
+                    continue;
+                }
+                if (++count == winLineLength) return true;
+            }
         }
+
+        return false;
+    }
+
+    private boolean checkCols(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+        for (int i = 0; i < matrix.length; i++) {
+            int count = 0;
+
+            for (int j = 0; j < matrix.length; j++) {
+                if (matrix[j][i] != symbol) {
+                    count = 0;
+                    continue;
+                }
+                if (++count == winLineLength) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkMainDiagonals(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+        int diagonalsCount = 2 * matrix.length - 1;
+
+        for (int i = 0; i < diagonalsCount; i++) {
+            int startRow, startCol;
+            if (i < matrix.length) {
+                startRow = matrix.length - i - 1;
+                startCol = 0;
+            } else {
+                startRow = 0;
+                startCol = i - matrix.length + 1;
+            }
+
+            int count = 0;
+
+            int length = Math.min(i + 1, diagonalsCount - i);
+            if (length < winLineLength) continue;
+
+            for (int j = 0; j < length; j++) {
+                if (matrix[startRow + j][startCol + j] != symbol) {
+                    count = 0;
+                    continue;
+                }
+                if (++count == winLineLength) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkSecondaryDiagonals(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+        int diagonalsCount = 2 * matrix.length - 1;
+
+        for (int i = 0; i < diagonalsCount; i++) {
+            int startRow, startCol;
+            if (i < matrix.length) {
+                startRow = i;
+                startCol = 0;
+            } else {
+                startRow = matrix.length - 1;
+                startCol = i - matrix.length + 1;
+            }
+
+            int count = 0;
+
+            int length = Math.min(i + 1, diagonalsCount - i);
+            if (length < winLineLength) continue;
+
+            for (int j = 0; j < length; j++) {
+                if (matrix[startRow - j][startCol + j] != symbol) {
+                    count = 0;
+                    continue;
+                }
+                if (++count == winLineLength) return true;
+            }
+        }
+
         return false;
     }
 
