@@ -18,4 +18,12 @@ public enum Player {
     public int chooseBetterScore(int score1, int score2) {
         return scoreComparisonFunction.apply(score1, score2);
     }
+
+    public static Player of(Symbol symbol) {
+        switch (symbol) {
+            case X: return MAXIMIZER;
+            case O: return MINIMIZER;
+            default: throw new IllegalArgumentException("Symbol should be X or O");
+        }
+    }
 }

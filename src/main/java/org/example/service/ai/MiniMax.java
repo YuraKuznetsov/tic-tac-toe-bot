@@ -5,49 +5,24 @@ import org.example.model.*;
 import org.example.service.MoveSorter;
 import org.example.service.evaluator.BoardEvaluator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 
 @RequiredArgsConstructor
-public class MiniMax {
+public class MiniMax implements Callable<Move> {
 
     private final BoardEvaluator boardEvaluator;
-    private static final Map<Symbol, Player> PLAYER_FOR_SYMBOL = Map.of(
-            Symbol.X, Player.MAXIMIZER,
-            Symbol.O, Player.MINIMIZER
-    );
+    private final Board board;
+    private final BoardCell cell;
     private static final int MAX_DEPTH = 6;
 
-    public Move findBestMove(Board board) {
-        return analyzeBoard(board).get(0);
-    }
+    @Override
+    public Move call() {
+        Symbol symbolToPlay = board.getNextSymbol();
+        board.fillCell(cell, symbolToPlay);
+        int score = minimax(board, 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        board.eraseCell(cell);
 
-    public List<Move> analyzeBoard(Board board) {
-        if (board.isFilled() || hasMaximizerWon(board) || hasMinimizerWon(board))
-            throw new IllegalStateException("The board is already filled. No more moves allowed.");
-
-        MiniMaxExecutor miniMaxExecutor = new MiniMaxExecutor();
-        List<Callable<Move>> tasks = prepareMoveTasks(board);
-        List<Move> moves = miniMaxExecutor.calculateMoves(tasks);
-        miniMaxExecutor.shutDown();
-
-        Player player = getPlayer(board);
-        moves.sort((m1, m2) -> player == Player.MINIMIZER ?
-                Integer.compare(m1.getScore(), m2.getScore()) :
-                Integer.compare(m2.getScore(), m1.getScore()));
-
-        return moves;
-    }
-
-    private List<Callable<Move>> prepareMoveTasks(Board board) {
-        List<Callable<Move>> tasks = new ArrayList<>();
-        for (BoardCell cell : board.getEmptyCells()) {
-            tasks.add(new MiniMaxTask(board.clone(), cell));
-        }
-
-        return tasks;
+        return new Move(cell, score);
     }
 
     private int minimax(Board board, int depth, int alpha, int beta) {
@@ -56,20 +31,19 @@ public class MiniMax {
         if (board.isFilled()) return 0;
         if (depth >= MAX_DEPTH) return boardEvaluator.evaluate(board);
 
-        Player player = getPlayer(board);
+        Symbol symbol = board.getNextSymbol();
+        Player player = Player.of(symbol);
+
         int bestScore = player.getInitialScore();
 
         MoveSorter moveSorter = new MoveSorter(boardEvaluator, player);
-        List<BoardCell> cells = moveSorter.sortCells(board);
 
-        for (BoardCell cell : cells) {
-            Symbol symbolToPlay = board.getNextSymbolToPlay();
-            board.fillCell(cell, symbolToPlay);
+        for (BoardCell cell : moveSorter.sortCells(board)) {
+            board.fillCell(cell, symbol);
             int moveScore = minimax(board, depth + 1, alpha, beta);
             board.eraseCell(cell);
             bestScore = player.chooseBetterScore(bestScore, moveScore);
 
-            // new logic
             if (player == Player.MAXIMIZER) {
                 alpha = Math.max(alpha, bestScore);
             }
@@ -90,30 +64,5 @@ public class MiniMax {
 
     private boolean hasMinimizerWon(Board board) {
         return boardEvaluator.hasSymbolWon(board, Symbol.O);
-    }
-
-    private Player getPlayer(Board board) {
-        Symbol symbolToPlay = board.getNextSymbolToPlay();
-        return PLAYER_FOR_SYMBOL.get(symbolToPlay);
-    }
-
-    private class MiniMaxTask implements Callable<Move> {
-        private final Board board;
-        private final BoardCell cell;
-
-        public MiniMaxTask(Board board, BoardCell cell) {
-            this.board = board;
-            this.cell = cell;
-        }
-
-        @Override
-        public Move call() {
-            Symbol symbolToPlay = board.getNextSymbolToPlay();
-            board.fillCell(cell, symbolToPlay);
-            int score = minimax(board, 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            board.eraseCell(cell);
-
-            return new Move(cell, score);
-        }
     }
 }

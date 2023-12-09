@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public class MiniMaxExecutor {
 
-    private static final int NUM_THREADS = 4;
+    private static final int NUM_THREADS = 8;
     private final ExecutorService executorService;
 
     public MiniMaxExecutor() {
