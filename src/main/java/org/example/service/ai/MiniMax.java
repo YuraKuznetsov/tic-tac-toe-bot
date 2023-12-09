@@ -3,17 +3,19 @@ package org.example.service.ai;
 import lombok.RequiredArgsConstructor;
 import org.example.model.*;
 import org.example.service.MoveSorter;
+import org.example.service.TranspositionTable;
 import org.example.service.evaluator.BoardEvaluator;
-
 import java.util.concurrent.*;
 
 @RequiredArgsConstructor
 public class MiniMax implements Callable<Move> {
 
+    private static final int MAX_DEPTH = 6;
+
     private final BoardEvaluator boardEvaluator;
+    private final TranspositionTable transpositionTable = new TranspositionTable();
     private final Board board;
     private final BoardCell cell;
-    private static final int MAX_DEPTH = 6;
 
     @Override
     public Move call() {
@@ -30,6 +32,9 @@ public class MiniMax implements Callable<Move> {
         if (hasMinimizerWon(board)) return boardEvaluator.evaluate(board) + board.getFilledCellsCount();
         if (board.isFilled()) return 0;
         if (depth >= MAX_DEPTH) return boardEvaluator.evaluate(board);
+
+        if (depth <= 3 && transpositionTable.containsKey(board))
+            return transpositionTable.get(board);
 
         Symbol symbol = board.getNextSymbol();
         Player player = Player.of(symbol);
@@ -53,6 +58,10 @@ public class MiniMax implements Callable<Move> {
             if (beta <= alpha) {
                 break;
             }
+        }
+
+        if (depth <= 3) {
+            transpositionTable.put(board.clone(), bestScore);
         }
 
         return bestScore;
