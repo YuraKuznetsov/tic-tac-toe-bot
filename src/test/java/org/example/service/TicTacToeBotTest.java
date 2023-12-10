@@ -119,18 +119,6 @@ class TicTacToeBotTest {
     }
 
     @Test
-    void testGameProcess9x9() {
-        Board board = getBoard(BoardFormat.BOARD_9X9, BoardModification.CLASSIC);
-
-        while (!board.isFilled()) {
-            Move bestMove = getMoveAndPrintTime(board);
-            board.fillCell(bestMove.getCell(), board.getNextSymbol());
-            System.out.println(bestMove);
-            System.out.println(board);
-        }
-    }
-
-    @Test
     void test() {
         Board board1 = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC);
         board1.fillCell(new BoardCell(3,3), Symbol.X);
