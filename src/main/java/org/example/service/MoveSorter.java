@@ -20,7 +20,7 @@ public class MoveSorter {
         List<CellOrderingNode> cellNodes = new ArrayList<>();
 
         for (BoardCell cell : board.getEmptyCells()) {
-            Symbol symbolToPlay = board.getNextSymbolToPlay();
+            Symbol symbolToPlay = board.getNextSymbol();
             board.fillCell(cell, symbolToPlay);
             int score = boardEvaluator.evaluate(board);
             board.eraseCell(cell);

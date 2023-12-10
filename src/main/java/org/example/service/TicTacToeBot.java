@@ -49,15 +49,40 @@ public class TicTacToeBot {
 
     private List<Callable<Move>> prepareMoveTasks(Board board) {
         List<Callable<Move>> tasks = new ArrayList<>();
-        for (BoardCell cell : board.getEmptyCells()) {
+        for (BoardCell cell : getCells(board)) {
             tasks.add(new MiniMax(boardEvaluator, board.clone(), cell));
         }
 
         return tasks;
     }
 
+    private List<BoardCell> getCells(Board board) {
+        List<BoardCell> cells = new ArrayList<>();
+
+        TranspositionTable table = new TranspositionTable();
+        for (BoardCell cell : board.getEmptyCells()) {
+            Symbol symbolToPlay = board.getNextSymbol();
+            board.fillCell(cell, symbolToPlay);
+            if (!table.containsKey(board)) {
+                cells.add(cell);
+                table.put(board.clone(), null);
+            }
+            board.eraseCell(cell);
+        }
+
+        return cells;
+    }
+
     public Move makeMove(Board board) {
         return compereMoves(board).get(0);
+    }
+
+    public String getGameStatus(Board board) {
+        if (board.isFilled()) return "Tie game";
+        if (boardEvaluator.hasSymbolWon(board, Symbol.X)) return "X won";
+        if (boardEvaluator.hasSymbolWon(board, Symbol.O)) return "O won";
+
+        return "Not finished";
     }
 }
 

@@ -15,6 +15,11 @@ public class TicTacToeController {
 
     @PostMapping("/optimal-move")
     public Move getOptimalMove(@RequestBody Board board) {
-        return bot.findOptimalMove(board);
+        return bot.makeMove(board);
+    }
+
+    @PostMapping("/status")
+    public String getGameStatus(@RequestBody Board board) {
+        return bot.getGameStatus(board);
     }
 }
