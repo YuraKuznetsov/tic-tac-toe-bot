@@ -1,14 +1,17 @@
-package org.example.service.ai;
+package org.example.service;
 
 import org.example.model.*;
-import org.example.service.evaluator.ClassicBoardEvaluator;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MiniMaxTest {
+class TicTacToeBotTest {
 
-    MiniMax underTest = new MiniMax(new ClassicBoardEvaluator());
+    TicTacToeBot underTest = new TicTacToeBot();
 
 
     /* Test Board Format 3x3 And Modification Classic */
@@ -22,7 +25,7 @@ class MiniMaxTest {
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
         BoardCell expectedCell = new BoardCell(1,1);
-        Move findedMove = underTest.find(board);
+        Move findedMove = underTest.makeMove(board);
 
         assertEquals(expectedCell, findedMove.getCell());
     }
@@ -36,7 +39,7 @@ class MiniMaxTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.find(board);
+        Move bestMove = underTest.makeMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(1, bestMove.getCell().getCol());
@@ -51,7 +54,7 @@ class MiniMaxTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.find(board);
+        Move bestMove = underTest.makeMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(2, bestMove.getCell().getCol());
@@ -66,7 +69,7 @@ class MiniMaxTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.find(board);
+        Move bestMove = underTest.makeMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(2, bestMove.getCell().getCol());
@@ -85,7 +88,7 @@ class MiniMaxTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.find(board);
+        Move bestMove = underTest.makeMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(3, bestMove.getCell().getCol());
@@ -97,7 +100,7 @@ class MiniMaxTest {
 
         while (!board.isFilled()) {
             Move bestMove = getMoveAndPrintTime(board);
-            board.fillCell(bestMove.getCell(), board.getNextSymbolToPlay());
+            board.fillCell(bestMove.getCell(), board.getNextSymbol());
             System.out.println(bestMove);
             System.out.println(board);
         }
@@ -109,7 +112,7 @@ class MiniMaxTest {
 
         while (!board.isFilled()) {
             Move bestMove = getMoveAndPrintTime(board);
-            board.fillCell(bestMove.getCell(), board.getNextSymbolToPlay());
+            board.fillCell(bestMove.getCell(), board.getNextSymbol());
             System.out.println(bestMove);
             System.out.println(board);
         }
@@ -121,16 +124,43 @@ class MiniMaxTest {
 
         while (!board.isFilled()) {
             Move bestMove = getMoveAndPrintTime(board);
-            board.fillCell(bestMove.getCell(), board.getNextSymbolToPlay());
+            board.fillCell(bestMove.getCell(), board.getNextSymbol());
             System.out.println(bestMove);
             System.out.println(board);
         }
     }
 
+    @Test
+    void test() {
+        Board board1 = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC);
+        board1.fillCell(new BoardCell(3,3), Symbol.X);
+        System.out.println(board1.hashCode());
+
+        Board board1Copy = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC);
+        board1Copy.fillCell(new BoardCell(3,3), Symbol.X);
+        System.out.println(board1Copy.hashCode());
+
+        System.out.println(board1.equals(board1Copy));
+
+        Board board2 = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC);
+        board2.fillCell(new BoardCell(3,2), Symbol.X);
+        System.out.println(board2.hashCode());
+
+        Map<Board, Integer> table = new HashMap<>();
+        table.put(board1, 1);
+        table.put(board2, 12);
+
+        Board board3 = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC);
+        board3.fillCell(new BoardCell(2,2), Symbol.X);
+        System.out.println(board3.hashCode());
+
+        System.out.println(table.get(board3));
+    }
+
 
     private Move getMoveAndPrintTime(Board board) {
         long startTime = System.nanoTime();
-        Move move = underTest.find(board);
+        Move move = underTest.makeMove(board);
         long endTime = System.nanoTime();
 
         // Calculate and print the elapsed time in milliseconds
