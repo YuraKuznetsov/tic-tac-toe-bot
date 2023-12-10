@@ -20,8 +20,8 @@
   <label for="board-format">Choose Board Format:</label>
   <select id="board-format">
     <option value="BOARD_3X3">3x3</option>
+    <option value="BOARD_5X5">5x5</option>
     <option value="BOARD_6X6">6x6</option>
-    <option value="BOARD_9X9">9x9</option>
   </select>
 
   <label for="board-modification">Choose Board Modification:</label>

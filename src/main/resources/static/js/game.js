@@ -15,15 +15,14 @@ const boardMatrix = Array.from({ length: boardSize }, () =>
     Array.from({ length: boardSize }, () => "EMPTY")
 );
 
+let waitingResponse = false
+
 
 // Function to create the game board based on the specified format
 function createBoard() {
-    boardContainer.innerHTML = ''; // Clear existing board
+    boardContainer.innerHTML = '';
 
-    // Set a maximum width for the board
     const maxWidth = 400;
-
-    // Calculate the width of each cell based on the specified format
     const cellWidth = Math.min(maxWidth / boardSize, 100);
 
     boardContainer.style.gridTemplateColumns = `repeat(${boardSize}, ${cellWidth}px)`;
@@ -42,13 +41,39 @@ function createBoard() {
     }
 }
 
+function checkGameStatus() {
+    const data = {
+        "format": boardFormat,
+        "modification": boardModification,
+        "matrix": boardMatrix
+    }
+
+    fetch("/game/status", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => response.text())
+        .then(status => {
+            console.log(status)
+            if (status !== "Not finished") {
+                alert(status);
+            }
+        })
+}
 
 // Function to handle user's move
 function onCellClick(row, col) {
+    if (waitingResponse) return;
     if (boardMatrix[row][col] !== "EMPTY") return;
 
     updateCell(row, col, userSymbol);
+    // has user won
+    checkGameStatus();
     makeBotMove();
+    // has bot won
 }
 
 
@@ -59,26 +84,8 @@ function updateCell(row, col, symbol) {
     cell.textContent = symbol;
 }
 
-
-// Function to update the visual representation of the board
-function updateBoard() {
-    const cells = document.querySelectorAll('.cell');
-    cells.forEach((cell) => {
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        cell.textContent = boardMatrix[row][col];
-    });
-}
-
-// Function to reset the game
-function resetGame() {
-    // Reset the 2D array (matrix) to null values
-    boardMatrix.forEach(row => row.fill("EMPTY"));
-    updateBoard();
-}
-
-// Function to make a move for the bot
 function makeBotMove() {
+    waitingResponse = true;
     const data = {
         "format": boardFormat,
         "modification": boardModification,
@@ -98,11 +105,16 @@ function makeBotMove() {
             const col = move["cell"].col;
 
             updateCell(row, col, botSymbol);
-        })
+            checkGameStatus()
+            waitingResponse = false;
+        });
 }
 
-// Initialize the board on page load
+document.getElementById('user-symbol').textContent = userSymbol;
+document.getElementById('board-modification').textContent = boardModification;
+
 createBoard();
 
-// Uncomment the line below to initiate the first move (user's move)
-// makeBotMove();
+if (botSymbol === "X") {
+    makeBotMove();
+}

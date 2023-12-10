@@ -9,7 +9,8 @@
 <body>
 
 <div id="game-container">
-  <div id="user-symbol">Your Symbol: X</div>
+  <div class="row">User: <span id="user-symbol"></span></div>
+  <div class="row">Modification: <span id="board-modification"></span></div>
 
   <div id="board"></div>
 </div>
