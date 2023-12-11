@@ -15,7 +15,7 @@ public class MiniMaxExecutor {
         this.executorService = Executors.newFixedThreadPool(NUM_THREADS);
     }
 
-    public List<Move> calculateMoves(List<Callable<Move>> tasks) {
+    public List<Move> invokeAll(List<Callable<Move>> tasks) {
         try {
             return executorService.invokeAll(tasks)
                     .stream()

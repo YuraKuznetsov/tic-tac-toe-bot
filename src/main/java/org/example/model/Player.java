@@ -19,6 +19,12 @@ public enum Player {
         return scoreComparisonFunction.apply(score1, score2);
     }
 
+    public static Player of(Board board) {
+        Symbol symbol = board.getNextSymbol();
+
+        return of(symbol);
+    }
+
     public static Player of(Symbol symbol) {
         switch (symbol) {
             case X: return MAXIMIZER;

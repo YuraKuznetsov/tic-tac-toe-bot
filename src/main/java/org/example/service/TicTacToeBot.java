@@ -18,36 +18,39 @@ public class TicTacToeBot {
 
     private final BoardEvaluator boardEvaluator = new ClassicBoardEvaluator();
 
-    public List<Move> compereMoves(Board board) {
-        List<Move> moves = evaluateMoves(board);
-
-        Symbol symbol = board.getNextSymbol();
-        Player player = Player.of(symbol);
-
-        moves.sort((m1, m2) -> player == Player.MINIMIZER ?
-                Integer.compare(m1.getScore(), m2.getScore()) :
-                Integer.compare(m2.getScore(), m1.getScore()));
-
-        return moves;
-    }
-
-    private List<Move> evaluateMoves(Board board) {
+    public Move findOptimalMove(Board board) {
         if (board.isFilled() || isGameWon(board))
             throw new IllegalStateException("No more moves allowed.");
 
-        MiniMaxExecutor miniMaxExecutor = new MiniMaxExecutor();
-        List<Callable<Move>> tasks = prepareMoveTasks(board);
-        List<Move> moves = miniMaxExecutor.calculateMoves(tasks);
-        miniMaxExecutor.shutDown();
+        Player player = Player.of(board);
 
-        return moves;
+        List<Move> moves = evaluateMoves(board);
+        sortMoves(moves, player);
+
+        return moves.get(0);
     }
 
     private boolean isGameWon(Board board) {
         return boardEvaluator.hasSymbolWon(board, Symbol.X) || boardEvaluator.hasSymbolWon(board, Symbol.O);
     }
 
-    private List<Callable<Move>> prepareMoveTasks(Board board) {
+    public void sortMoves(List<Move> moves, Player player) {
+        moves.sort((m1, m2) -> player == Player.MINIMIZER ?
+                Integer.compare(m1.getScore(), m2.getScore()) :
+                Integer.compare(m2.getScore(), m1.getScore()));
+    }
+
+    private List<Move> evaluateMoves(Board board) {
+        List<Callable<Move>> tasks = prepareMiniMaxTasks(board);
+
+        MiniMaxExecutor miniMaxExecutor = new MiniMaxExecutor();
+        List<Move> moves = miniMaxExecutor.invokeAll(tasks);
+        miniMaxExecutor.shutDown();
+
+        return moves;
+    }
+
+    private List<Callable<Move>> prepareMiniMaxTasks(Board board) {
         List<Callable<Move>> tasks = new ArrayList<>();
         for (BoardCell cell : getCells(board)) {
             tasks.add(new MiniMax(boardEvaluator, board.clone(), cell));
@@ -71,10 +74,6 @@ public class TicTacToeBot {
         }
 
         return cells;
-    }
-
-    public Move makeMove(Board board) {
-        return compereMoves(board).get(0);
     }
 
     public String getGameStatus(Board board) {

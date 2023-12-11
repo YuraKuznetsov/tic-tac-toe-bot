@@ -3,7 +3,6 @@ package org.example.service;
 import org.example.model.*;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ class TicTacToeBotTest {
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
         BoardCell expectedCell = new BoardCell(1,1);
-        Move findedMove = underTest.makeMove(board);
+        Move findedMove = underTest.findOptimalMove(board);
 
         assertEquals(expectedCell, findedMove.getCell());
     }
@@ -39,7 +38,7 @@ class TicTacToeBotTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.makeMove(board);
+        Move bestMove = underTest.findOptimalMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(1, bestMove.getCell().getCol());
@@ -54,7 +53,7 @@ class TicTacToeBotTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.makeMove(board);
+        Move bestMove = underTest.findOptimalMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(2, bestMove.getCell().getCol());
@@ -69,7 +68,7 @@ class TicTacToeBotTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_3X3, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.makeMove(board);
+        Move bestMove = underTest.findOptimalMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(2, bestMove.getCell().getCol());
@@ -88,7 +87,7 @@ class TicTacToeBotTest {
         };
 
         Board board = getBoard(BoardFormat.BOARD_6X6, BoardModification.CLASSIC, matrix);
-        Move bestMove = underTest.makeMove(board);
+        Move bestMove = underTest.findOptimalMove(board);
 
         assertEquals(1, bestMove.getCell().getRow());
         assertEquals(3, bestMove.getCell().getCol());
@@ -148,7 +147,7 @@ class TicTacToeBotTest {
 
     private Move getMoveAndPrintTime(Board board) {
         long startTime = System.nanoTime();
-        Move move = underTest.makeMove(board);
+        Move move = underTest.findOptimalMove(board);
         long endTime = System.nanoTime();
 
         // Calculate and print the elapsed time in milliseconds
