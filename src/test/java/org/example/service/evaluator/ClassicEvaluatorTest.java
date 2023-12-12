@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ClassicBoardEvaluatorTest {
+class ClassicEvaluatorTest {
 
     BoardEvaluator evaluator;
 
     @BeforeEach
     void setUp() {
-        evaluator = new ClassicBoardEvaluator();
+        evaluator = new ClassicEvaluator();
     }
 
     @Test

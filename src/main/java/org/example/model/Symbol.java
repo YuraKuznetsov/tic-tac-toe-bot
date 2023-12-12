@@ -12,4 +12,10 @@ public enum Symbol {
     EMPTY(null);
 
     private final String value;
+
+    public static Symbol opponentOf(Symbol symbol) {
+        if (symbol == null || symbol == EMPTY) throw new IllegalArgumentException();
+
+        return symbol == X ? O : X;
+    }
 }

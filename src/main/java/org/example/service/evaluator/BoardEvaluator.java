@@ -6,7 +6,7 @@ import org.example.model.Symbol;
 
 public abstract class BoardEvaluator {
 
-    public abstract BoardModification getBoardModification();
+    public abstract BoardModification getModification();
 
     public abstract int evaluate(Board board);
 

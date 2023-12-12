@@ -1,11 +1,11 @@
 package org.example.service;
 
-import lombok.RequiredArgsConstructor;
 import org.example.model.*;
 import org.example.service.ai.MiniMax;
 import org.example.service.ai.MiniMaxExecutor;
 import org.example.service.evaluator.BoardEvaluator;
-import org.example.service.evaluator.ClassicBoardEvaluator;
+import org.example.service.evaluator.ClassicEvaluator;
+import org.example.service.evaluator.ThorEvaluator;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,24 +13,36 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 @Service
-@RequiredArgsConstructor
 public class TicTacToeBot {
 
-    private final BoardEvaluator boardEvaluator = new ClassicBoardEvaluator();
+    private final List<BoardEvaluator> boardEvaluators;
+
+    public TicTacToeBot() {
+        boardEvaluators = List.of(new ClassicEvaluator(), new ThorEvaluator());
+    }
 
     public Move findOptimalMove(Board board) {
-        if (board.isFilled() || isGameWon(board))
+        BoardEvaluator boardEvaluator = getEvaluator(board);
+
+        if (board.isFilled() || isGameWon(board, boardEvaluator))
             throw new IllegalStateException("No more moves allowed.");
 
         Player player = Player.of(board);
 
-        List<Move> moves = evaluateMoves(board);
+        List<Move> moves = evaluateMoves(board, boardEvaluator);
         sortMoves(moves, player);
 
         return moves.get(0);
     }
 
-    private boolean isGameWon(Board board) {
+    private BoardEvaluator getEvaluator(Board board) {
+        return boardEvaluators.stream()
+                .filter(evaluator -> evaluator.getModification() == board.getModification())
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    private boolean isGameWon(Board board, BoardEvaluator boardEvaluator) {
         return boardEvaluator.hasSymbolWon(board, Symbol.X) || boardEvaluator.hasSymbolWon(board, Symbol.O);
     }
 
@@ -40,8 +52,8 @@ public class TicTacToeBot {
                 Integer.compare(m2.getScore(), m1.getScore()));
     }
 
-    private List<Move> evaluateMoves(Board board) {
-        List<Callable<Move>> tasks = prepareMiniMaxTasks(board);
+    private List<Move> evaluateMoves(Board board, BoardEvaluator boardEvaluator) {
+        List<Callable<Move>> tasks = prepareMiniMaxTasks(board, boardEvaluator);
 
         MiniMaxExecutor miniMaxExecutor = new MiniMaxExecutor();
         List<Move> moves = miniMaxExecutor.invokeAll(tasks);
@@ -50,7 +62,7 @@ public class TicTacToeBot {
         return moves;
     }
 
-    private List<Callable<Move>> prepareMiniMaxTasks(Board board) {
+    private List<Callable<Move>> prepareMiniMaxTasks(Board board, BoardEvaluator boardEvaluator) {
         List<Callable<Move>> tasks = new ArrayList<>();
         for (BoardCell cell : getCells(board)) {
             tasks.add(new MiniMax(boardEvaluator, board.clone(), cell));
@@ -77,6 +89,8 @@ public class TicTacToeBot {
     }
 
     public String getGameStatus(Board board) {
+        BoardEvaluator boardEvaluator = getEvaluator(board);
+
         if (board.isFilled()) return "Tie game";
         if (boardEvaluator.hasSymbolWon(board, Symbol.X)) return "X won";
         if (boardEvaluator.hasSymbolWon(board, Symbol.O)) return "O won";

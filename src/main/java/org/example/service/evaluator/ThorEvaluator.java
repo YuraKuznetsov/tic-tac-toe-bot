@@ -4,12 +4,11 @@ import org.example.model.Board;
 import org.example.model.BoardModification;
 import org.example.model.Symbol;
 
-
-public class ClassicBoardEvaluator extends BoardEvaluator {
+public class ThorEvaluator extends BoardEvaluator {
 
     @Override
-    public BoardModification getBoardModification() {
-        return BoardModification.CLASSIC;
+    public BoardModification getModification() {
+        return BoardModification.THOR;
     }
 
     @Override
@@ -31,32 +30,66 @@ public class ClassicBoardEvaluator extends BoardEvaluator {
                 checkSecondaryDiagonals(matrix, symbol, winLineLength);
     }
 
-    private boolean checkRows(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+    private boolean checkRows(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
         for (int i = 0; i < matrix.length; i++) {
-            int count = 0;
+            int startSymbolCount = 0;
 
             for (int j = 0; j < matrix.length; j++) {
-                if (matrix[i][j] != symbol) {
+                Symbol symbol = matrix[i][j];
+
+                if (symbol != playerSymbol) break;
+                startSymbolCount++;
+            }
+
+            if (startSymbolCount == winLineLength) return true;
+
+            int count = 0;
+
+            for (int j = startSymbolCount; j < matrix.length; j++) {
+                Symbol symbol = matrix[i][j];
+
+                if (symbol != playerSymbol) {
                     count = 0;
                     continue;
                 }
-                if (++count == winLineLength) return true;
+
+                count++;
+                if (j == matrix.length - 1) count += startSymbolCount;
+
+                if (count == winLineLength) return true;
             }
         }
 
         return false;
     }
 
-    private boolean checkCols(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+    private boolean checkCols(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
         for (int i = 0; i < matrix.length; i++) {
-            int count = 0;
+            int startSymbolCount = 0;
 
             for (int j = 0; j < matrix.length; j++) {
-                if (matrix[j][i] != symbol) {
+                Symbol symbol = matrix[j][i];
+
+                if (symbol != playerSymbol) break;
+                startSymbolCount++;
+            }
+
+            if (startSymbolCount == winLineLength) return true;
+
+            int count = 0;
+
+            for (int j = startSymbolCount; j < matrix.length; j++) {
+                Symbol symbol = matrix[j][i];
+
+                if (symbol != playerSymbol) {
                     count = 0;
                     continue;
                 }
-                if (++count == winLineLength) return true;
+
+                count++;
+                if (j == matrix.length - 1) count += startSymbolCount;
+
+                if (count == winLineLength) return true;
             }
         }
 
@@ -133,24 +166,57 @@ public class ClassicBoardEvaluator extends BoardEvaluator {
                 calculateSecondaryDiagonalScore(matrix, symbol, winLineLength);
     }
 
-    private int calculateRowsScore(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+    private int calculateRowsScore(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        Symbol opponentSymbol = Symbol.opponentOf(playerSymbol);
         int rowsScore = 0;
 
         for (int i = 0; i < matrix.length; i++) {
             int rowScore = 0;
+
+            int startSymbolCount = 0;
+            int startEmptyCount = 0;
+
+            for (int j = 0; j < matrix.length; j++) {
+                Symbol symbol = matrix[i][j];
+
+                if (symbol == opponentSymbol) break;
+                if (symbol == playerSymbol) startSymbolCount++;
+                else startEmptyCount++;
+            }
+
+            if (startSymbolCount + startEmptyCount >= winLineLength) {
+                rowScore += getScoreForSymbolsCount(startSymbolCount);
+            }
+
             int symbolCount = 0;
             int emptyCount = 0;
 
-            for (int j = 0; j < matrix.length; j++) {
+            for (int j = startSymbolCount + startEmptyCount; j < matrix.length; j++) {
+                Symbol symbol = matrix[i][j];
 
-                if (matrix[i][j] == symbol) {
+                if (symbol == playerSymbol) {
                     symbolCount++;
                     if (j != matrix.length - 1) continue;
                 }
-                if (matrix[i][j] == Symbol.EMPTY) {
+                if (symbol == Symbol.EMPTY) {
                     emptyCount++;
                     if (j != matrix.length - 1) continue;
                 }
+
+                // Якщо останній елемент і не символ противника, додаємо пусті клітинки і символи гравця з початку
+                if (j == matrix.length - 1 && symbol != opponentSymbol) {
+                    symbolCount += startSymbolCount;
+                    emptyCount += startEmptyCount;
+
+                    if (startSymbolCount + startEmptyCount >= winLineLength) {
+                        rowScore += getScoreForSymbolsCount(symbolCount) - getScoreForSymbolsCount(startSymbolCount);
+                    }
+                    else if (symbolCount + emptyCount >= winLineLength) {
+                        rowScore += getScoreForSymbolsCount(symbolCount);
+                    }
+                    break;
+                }
+
                 if (symbolCount + emptyCount >= winLineLength) {
                     rowScore += getScoreForSymbolsCount(symbolCount);
                 }
@@ -165,24 +231,54 @@ public class ClassicBoardEvaluator extends BoardEvaluator {
         return rowsScore;
     }
 
-    private int calculateColsScore(Symbol[][] matrix, Symbol symbol, int winLineLength) {
+    private int calculateColsScore(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        Symbol opponentSymbol = Symbol.opponentOf(playerSymbol);
         int colsScore = 0;
 
         for (int i = 0; i < matrix.length; i++) {
             int colScore = 0;
+
+            int startSymbolCount = 0;
+            int startEmptyCount = 0;
+
+            for (int j = 0; j < matrix.length; j++) {
+                Symbol symbol = matrix[j][i];
+
+                if (symbol == opponentSymbol) break;
+                if (symbol == playerSymbol) startSymbolCount++;
+                else startEmptyCount++;
+            }
+
+            if (startSymbolCount + startEmptyCount >= winLineLength) {
+                colScore += getScoreForSymbolsCount(startSymbolCount);
+            }
+
             int symbolCount = 0;
             int emptyCount = 0;
 
-            for (int j = 0; j < matrix.length; j++) {
+            for (int j = startSymbolCount + startEmptyCount; j < matrix.length; j++) {
+                Symbol symbol = matrix[j][i];
 
-                if (matrix[j][i] == symbol) {
+                if (symbol == playerSymbol) {
                     symbolCount++;
                     if (j != matrix.length - 1) continue;
                 }
-                if (matrix[j][i] == Symbol.EMPTY) {
+                if (symbol == Symbol.EMPTY) {
                     emptyCount++;
                     if (j != matrix.length - 1) continue;
                 }
+
+                // Якщо останній елемент і не символ противника, додаємо пусті клітинки і символи гравця з початку
+                if (j == matrix.length - 1 && symbol != opponentSymbol) {
+                    symbolCount += startSymbolCount;
+                    emptyCount += startEmptyCount;
+
+                    if (symbolCount + emptyCount >= winLineLength) {
+                        colScore += getScoreForSymbolsCount(symbolCount) - getScoreForSymbolsCount(startSymbolCount);
+                    }
+                    break;
+                }
+
                 if (symbolCount + emptyCount >= winLineLength) {
                     colScore += getScoreForSymbolsCount(symbolCount);
                 }
