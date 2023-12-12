@@ -96,30 +96,37 @@ public class ThorEvaluator extends BoardEvaluator {
         return false;
     }
 
-    private boolean checkMainDiagonals(Symbol[][] matrix, Symbol symbol, int winLineLength) {
-        int diagonalsCount = 2 * matrix.length - 1;
+    private boolean checkMainDiagonals(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        for (int i = 0; i < matrix.length; i++) {
+            int startSymbolCount = 0;
+            int row = i;
 
-        for (int i = 0; i < diagonalsCount; i++) {
-            int startRow, startCol;
-            if (i < matrix.length) {
-                startRow = matrix.length - i - 1;
-                startCol = 0;
-            } else {
-                startRow = 0;
-                startCol = i - matrix.length + 1;
+            for (int j = 0; j < matrix.length; j++, row++) {
+                if (row >= matrix.length) row -= matrix.length;
+
+                Symbol symbol = matrix[row][j];
+                if (symbol != playerSymbol) break;
+                startSymbolCount++;
             }
+
+            if (startSymbolCount == winLineLength) return true;
 
             int count = 0;
 
-            int length = Math.min(i + 1, diagonalsCount - i);
-            if (length < winLineLength) continue;
+            for (int j = startSymbolCount; j < matrix.length; j++, row++) {
+                if (row >= matrix.length) row -= matrix.length;
 
-            for (int j = 0; j < length; j++) {
-                if (matrix[startRow + j][startCol + j] != symbol) {
+                Symbol symbol = matrix[row][j];
+
+                if (symbol != playerSymbol) {
                     count = 0;
                     continue;
                 }
-                if (++count == winLineLength) return true;
+
+                count++;
+                if (j == matrix.length - 1) count += startSymbolCount;
+
+                if (count == winLineLength) return true;
             }
         }
 
@@ -161,33 +168,6 @@ public class ThorEvaluator extends BoardEvaluator {
         }
 
         return false;
-//        int diagonalsCount = 2 * matrix.length - 1;
-//
-//        for (int i = 0; i < diagonalsCount; i++) {
-//            int startRow, startCol;
-//            if (i < matrix.length) {
-//                startRow = i;
-//                startCol = 0;
-//            } else {
-//                startRow = matrix.length - 1;
-//                startCol = i - matrix.length + 1;
-//            }
-//
-//            int count = 0;
-//
-//            int length = Math.min(i + 1, diagonalsCount - i);
-//            if (length < winLineLength) continue;
-//
-//            for (int j = 0; j < length; j++) {
-//                if (matrix[startRow - j][startCol + j] != symbol) {
-//                    count = 0;
-//                    continue;
-//                }
-//                if (++count == winLineLength) return true;
-//            }
-//        }
-//
-//        return false;
     }
 
     private int calculateScore(Board board, Symbol symbol) {
@@ -327,36 +307,59 @@ public class ThorEvaluator extends BoardEvaluator {
         return colsScore;
     }
 
-    private int calculateMainDiagonalScore(Symbol[][] matrix, Symbol symbol, int winLineLength) {
-        int diagonalsCount = 2 * matrix.length - 1;
-        int mainDiagonalsScore = 0;
+    private int calculateMainDiagonalScore(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        Symbol opponentSymbol = Symbol.opponentOf(playerSymbol);
+        int diagonalsScore = 0;
 
-        for (int i = 0; i < diagonalsCount; i++) {
-            int startRow, startCol;
-            if (i < matrix.length) {
-                startRow = matrix.length - i - 1;
-                startCol = 0;
-            } else {
-                startRow = 0;
-                startCol = i - matrix.length + 1;
+        for (int i = 0; i < matrix.length; i++) {
+            int diagonalScore = 0;
+            int startSymbolCount = 0;
+            int startEmptyCount = 0;
+
+            int row = i;
+
+            for (int j = 0; j < matrix.length; j++, row++) {
+                if (row >= matrix.length) row -= matrix.length;
+
+                Symbol symbol = matrix[row][j];
+
+                if (symbol == opponentSymbol) break;
+                if (symbol == playerSymbol) startSymbolCount++;
+                else startEmptyCount++;
             }
 
-            int diagonalScore = 0;
+            if (startSymbolCount + startEmptyCount >= winLineLength) {
+                diagonalScore += getScoreForSymbolsCount(startSymbolCount);
+            }
+
             int symbolCount = 0;
             int emptyCount = 0;
 
-            int length = Math.min(i + 1, diagonalsCount - i);
-            if (length < winLineLength) continue;
+            for (int j = startSymbolCount; j < matrix.length; j++, row++) {
+                if (row >= matrix.length) row -= matrix.length;
 
-            for (int j = 0; j < length; j++) {
-                if (matrix[startRow + j][startCol + j] == symbol) {
+                Symbol symbol = matrix[row][j];
+
+                if (symbol == playerSymbol) {
                     symbolCount++;
-                    if (j != length - 1) continue;
+                    if (j != matrix.length - 1) continue;
                 }
-                if (matrix[startRow + j][startCol + j] == Symbol.EMPTY) {
+                if (symbol == Symbol.EMPTY) {
                     emptyCount++;
-                    if (j != length - 1) continue;
+                    if (j != matrix.length - 1) continue;
                 }
+
+                // Якщо останній елемент і не символ противника, додаємо пусті клітинки і символи гравця з початку
+                if (j == matrix.length - 1 && symbol != opponentSymbol) {
+                    symbolCount += startSymbolCount;
+                    emptyCount += startEmptyCount;
+
+                    if (symbolCount + emptyCount >= winLineLength) {
+                        diagonalScore += getScoreForSymbolsCount(symbolCount) - getScoreForSymbolsCount(startSymbolCount);
+                    }
+                    break;
+                }
+
                 if (symbolCount + emptyCount >= winLineLength) {
                     diagonalScore += getScoreForSymbolsCount(symbolCount);
                 }
@@ -365,42 +368,65 @@ public class ThorEvaluator extends BoardEvaluator {
                 emptyCount = 0;
             }
 
-            mainDiagonalsScore += diagonalScore;
+            diagonalsScore += diagonalScore;
         }
 
-        return mainDiagonalsScore;
+        return diagonalsScore;
     }
 
-    private int calculateSecondaryDiagonalScore(Symbol[][] matrix, Symbol symbol, int winLineLength) {
-        int diagonalsCount = 2 * matrix.length - 1;
-        int secondaryDiagonalsScore = 0;
+    private int calculateSecondaryDiagonalScore(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        Symbol opponentSymbol = Symbol.opponentOf(playerSymbol);
+        int diagonalsScore = 0;
 
-        for (int i = 0; i < diagonalsCount; i++) {
-            int startRow, startCol;
-            if (i < matrix.length) {
-                startRow = i;
-                startCol = 0;
-            } else {
-                startRow = matrix.length - 1;
-                startCol = i - matrix.length + 1;
+        for (int i = 0; i < matrix.length; i++) {
+            int diagonalScore = 0;
+            int startSymbolCount = 0;
+            int startEmptyCount = 0;
+
+            int row = i;
+
+            for (int j = 0; j < matrix.length; j++, row--) {
+                if (row < 0) row = matrix.length + row;
+
+                Symbol symbol = matrix[row][j];
+
+                if (symbol == opponentSymbol) break;
+                if (symbol == playerSymbol) startSymbolCount++;
+                else startEmptyCount++;
             }
 
-            int diagonalScore = 0;
+            if (startSymbolCount + startEmptyCount >= winLineLength) {
+                diagonalScore += getScoreForSymbolsCount(startSymbolCount);
+            }
+
             int symbolCount = 0;
             int emptyCount = 0;
 
-            int length = Math.min(i + 1, diagonalsCount - i);
-            if (length < winLineLength) continue;
+            for (int j = startSymbolCount; j < matrix.length; j++, row--) {
+                if (row < 0) row = matrix.length + row;
 
-            for (int j = 0; j < length; j++) {
-                if (matrix[startRow - j][startCol + j] == symbol) {
+                Symbol symbol = matrix[row][j];
+
+                if (symbol == playerSymbol) {
                     symbolCount++;
-                    if (j != length - 1) continue;
+                    if (j != matrix.length - 1) continue;
                 }
-                if (matrix[startRow - j][startCol + j] == Symbol.EMPTY) {
+                if (symbol == Symbol.EMPTY) {
                     emptyCount++;
-                    if (j != length - 1) continue;
+                    if (j != matrix.length - 1) continue;
                 }
+
+                // Якщо останній елемент і не символ противника, додаємо пусті клітинки і символи гравця з початку
+                if (j == matrix.length - 1 && symbol != opponentSymbol) {
+                    symbolCount += startSymbolCount;
+                    emptyCount += startEmptyCount;
+
+                    if (symbolCount + emptyCount >= winLineLength) {
+                        diagonalScore += getScoreForSymbolsCount(symbolCount) - getScoreForSymbolsCount(startSymbolCount);
+                    }
+                    break;
+                }
+
                 if (symbolCount + emptyCount >= winLineLength) {
                     diagonalScore += getScoreForSymbolsCount(symbolCount);
                 }
@@ -409,10 +435,10 @@ public class ThorEvaluator extends BoardEvaluator {
                 emptyCount = 0;
             }
 
-            secondaryDiagonalsScore += diagonalScore;
+            diagonalsScore += diagonalScore;
         }
 
-        return secondaryDiagonalsScore;
+        return diagonalsScore;
     }
 
     private int getScoreForSymbolsCount(int symbolsCount) {

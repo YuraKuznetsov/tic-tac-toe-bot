@@ -20,14 +20,16 @@
   <label for="board-format">Choose Board Format:</label>
   <select id="board-format">
     <option value="BOARD_3X3">3x3</option>
+    <option value="BOARD_4X4">4x4</option>
     <option value="BOARD_5X5">5x5</option>
     <option value="BOARD_6X6">6x6</option>
+    <option value="HARD_BOARD_6X6">6x6(5)</option>
   </select>
 
   <label for="board-modification">Choose Board Modification:</label>
   <select id="board-modification">
     <option value="CLASSIC">Classic</option>
-    <option value="CIRCLE">Circle</option>
+<#--    <option value="CIRCLE">Circle</option>-->
     <option value="THOR">Thor</option>
   </select>
 
