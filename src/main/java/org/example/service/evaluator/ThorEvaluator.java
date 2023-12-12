@@ -126,34 +126,68 @@ public class ThorEvaluator extends BoardEvaluator {
         return false;
     }
 
-    private boolean checkSecondaryDiagonals(Symbol[][] matrix, Symbol symbol, int winLineLength) {
-        int diagonalsCount = 2 * matrix.length - 1;
+    private boolean checkSecondaryDiagonals(Symbol[][] matrix, Symbol playerSymbol, int winLineLength) {
+        for (int i = 0; i < matrix.length; i++) {
+            int startSymbolCount = 0;
+            int row = i;
 
-        for (int i = 0; i < diagonalsCount; i++) {
-            int startRow, startCol;
-            if (i < matrix.length) {
-                startRow = i;
-                startCol = 0;
-            } else {
-                startRow = matrix.length - 1;
-                startCol = i - matrix.length + 1;
+            for (int j = 0; j < matrix.length; j++, row--) {
+                if (row < 0) row = matrix.length + row;
+
+                Symbol symbol = matrix[row][j];
+                if (symbol != playerSymbol) break;
+                startSymbolCount++;
             }
+
+            if (startSymbolCount == winLineLength) return true;
 
             int count = 0;
 
-            int length = Math.min(i + 1, diagonalsCount - i);
-            if (length < winLineLength) continue;
+            for (int j = startSymbolCount; j < matrix.length; j++, row--) {
+                if (row < 0) row = matrix.length + row;
 
-            for (int j = 0; j < length; j++) {
-                if (matrix[startRow - j][startCol + j] != symbol) {
+                Symbol symbol = matrix[row][j];
+
+                if (symbol != playerSymbol) {
                     count = 0;
                     continue;
                 }
-                if (++count == winLineLength) return true;
+
+                count++;
+                if (j == matrix.length - 1) count += startSymbolCount;
+
+                if (count == winLineLength) return true;
             }
         }
 
         return false;
+//        int diagonalsCount = 2 * matrix.length - 1;
+//
+//        for (int i = 0; i < diagonalsCount; i++) {
+//            int startRow, startCol;
+//            if (i < matrix.length) {
+//                startRow = i;
+//                startCol = 0;
+//            } else {
+//                startRow = matrix.length - 1;
+//                startCol = i - matrix.length + 1;
+//            }
+//
+//            int count = 0;
+//
+//            int length = Math.min(i + 1, diagonalsCount - i);
+//            if (length < winLineLength) continue;
+//
+//            for (int j = 0; j < length; j++) {
+//                if (matrix[startRow - j][startCol + j] != symbol) {
+//                    count = 0;
+//                    continue;
+//                }
+//                if (++count == winLineLength) return true;
+//            }
+//        }
+//
+//        return false;
     }
 
     private int calculateScore(Board board, Symbol symbol) {
