@@ -1,9 +1,7 @@
-package org.example.service.ai;
+package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.model.*;
-import org.example.service.MoveSorter;
-import org.example.service.TranspositionTable;
 import org.example.service.evaluator.BoardEvaluator;
 import java.util.concurrent.*;
 
@@ -33,7 +31,7 @@ public class MiniMax implements Callable<Move> {
         if (board.isFilled()) return 0;
         if (depth >= MAX_DEPTH) return boardEvaluator.evaluate(board);
 
-        if (depth <= 3 && transpositionTable.containsKey(board))
+        if (depth <= 4 && transpositionTable.containsKey(board))
             return transpositionTable.get(board);
 
         Symbol symbol = board.getNextSymbol();
@@ -60,7 +58,7 @@ public class MiniMax implements Callable<Move> {
             }
         }
 
-        if (depth <= 3) {
+        if (depth <= 4) {
             transpositionTable.put(board.clone(), bestScore);
         }
 

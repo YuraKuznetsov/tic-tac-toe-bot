@@ -1,8 +1,6 @@
 package org.example.service;
 
 import org.example.model.*;
-import org.example.service.ai.MiniMax;
-import org.example.service.ai.MiniMaxExecutor;
 import org.example.service.evaluator.BoardEvaluator;
 import org.example.service.evaluator.ClassicEvaluator;
 import org.example.service.evaluator.ThorEvaluator;

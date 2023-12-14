@@ -1,4 +1,4 @@
-package org.example.service.ai;
+package org.example.service;
 
 import org.example.model.Move;
 
